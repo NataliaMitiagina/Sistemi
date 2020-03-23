@@ -1,0 +1,62 @@
+import re
+def slovari(art):
+    '''Данная функция формирует все составляющие группы body и lable в формат, соответсвующий госту 7.0.5.'''
+    
+    ls =['Author','Journal','Title','Year','Pages','Volume', 'Numpages', 'Language', 'Booktitle','Address','Addres','School','Isd']
+    slov_en= {
+        'Pages':'-P ',
+        'Volume':'-Vol ',
+        'Year': '-'
+    }
+    slov_ru = {
+        'Numpages': '-C',
+        'Volume': '-Вып',
+        'Year': '-',
+        'Isd': 'Изд-во'
+    }
+    art_tmp = {}
+    template = {}
+    if art.get('Language', '')== 'russian':
+        slov = slov_ru
+    else:
+        slov = slov_en
+    for x in ls:
+        if x in art:
+            art_tmp[x]=slov.get(x, '') +art.get(x, '')
+        else:
+            art_tmp[x] = ''
+    art_tmp['Author'] = art_tmp['Author'].replace(' and ',', ')
+    template = {
+        'Article':'{Author}{Title}//{Journal}{Address}{Addres}{Isd}{School}{Year}{Volume}{Pages}',
+        'Book': '{Author}{Title}{Booktitle}{Journal}{Address}{Addres}{Isd}{School}{Year}{Numpages}'
+    }
+    if art['type']  in template.keys():
+        return template[art['type']].format(**art_tmp)
+    else:
+        return template['Article'].format(**art_tmp)
+
+
+opening = open(r'C:\Users\Admin\Desktop\biblio.bib', mode='r', encoding = 'utf-8') 
+data = opening.read()
+
+pat = re.compile(r'\@(?P<type>\w+){(?P<lable>.+?),(?P<body>.+?)}\s*}', re.DOTALL)
+pat2 = re.compile(r'(\w+)\s*=\s*{(.+?)}', re.DOTALL)
+
+
+ite = re.finditer(pat,data)
+
+art_list=[]
+
+for i in ite:
+    st = i.group('body') + '}'
+    body = pat2.findall(st)
+    art = {
+           'type':i.group('type'),
+           'lable':i.group('lable')
+           }
+    for it in body:
+        art[it[0]] = it[1]
+    art_list.append(art)
+
+for art in art_list:
+    print(slovari(art))
